@@ -14,7 +14,7 @@ Releases are now automated through GitHub Actions using the release-it tool. To 
 4. Enter the version increment or specific version:
    - Use "patch", "minor", or "major" for automatic version bumping from current version
    - Or enter a specific version number like "1.12.0" to release that exact version
-   - Note: release-it accepts both increment types and specific semver versions
+   - Note: Specific versions must be in valid semver format (X.Y.Z) and typically should be higher than the current version
 5. The workflow will:
    - Build the project
    - Create release artifacts

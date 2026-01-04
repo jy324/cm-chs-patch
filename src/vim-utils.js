@@ -33,10 +33,13 @@ const chinese_punctuation_mapping = {
   "_": "——",
 };
 
-
 /**
- *
- * @param {{CodeMirror: typeof import("codemirror"); vim: any; cut(text: string): any[]}} ctx
+ * Utility functions for Vim mode with Chinese character support
+ * @param {Object} ctx - Context object
+ * @param {typeof import("codemirror")} ctx.CodeMirror - CodeMirror class
+ * @param {any} ctx.vim - Vim mode object
+ * @param {function(string): string[]} ctx.cut - Function to segment Chinese text
+ * @returns {Object} Utility functions for Vim mode
  */
 export function utils({ vim, CodeMirror, cut }) {
   const vimGlobalState = vim.getVimGlobalState_();
@@ -305,7 +308,16 @@ export function utils({ vim, CodeMirror, cut }) {
 
   // #endregion
 
-  /** custom function */
+  /**
+   * Find index of character considering Chinese punctuation mappings
+   * Allows typing English punctuation to jump to corresponding Chinese punctuation
+   * @param {string} character - The character to search for
+   * @param {number} start - Starting position in the line
+   * @param {string} line - The line text
+   * @param {boolean} forward - Search direction
+   * @param {number} idx - Index found for the original character
+   * @returns {number} The best index considering both English and Chinese punctuation
+   */
   function idxbyChsPunctuation(character, start, line, forward, idx) {
     if (
       character.length == 1 &&
@@ -324,6 +336,13 @@ export function utils({ vim, CodeMirror, cut }) {
     }
     return idx;
   }
+  
+  /**
+   * Get the segment at a given position in the line
+   * @param {string[]} segments - Array of text segments
+   * @param {number} pos - Position in the line
+   * @returns {Object} Segment information with index, text, begin, and end positions
+   */
   function segmentAt(segments, pos) {
     let chunkBegin = 0,
       chunkEnd = 0;

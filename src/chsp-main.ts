@@ -121,6 +121,13 @@ export default class CMChsPatch extends Plugin {
     return true;
   }
 
+  /**
+   * Cut text into segments using configured segmenter (Jieba or Intl.Segmenter)
+   * @param text - The text to segment
+   * @param options - Options for segmentation
+   * @param options.search - If true, uses cutForSearch mode for better search results
+   * @returns Array of text segments
+   */
   cut(text: string, { search = false }: { search?: boolean } = {}): string[] {
     // Input validation
     if (!text || text.length === 0) {
@@ -142,6 +149,15 @@ export default class CMChsPatch extends Plugin {
     }
   }
 
+  /**
+   * Get the segment range at the cursor position
+   * @param cursor - The cursor position
+   * @param params - Text range parameters
+   * @param params.from - Start position of the range
+   * @param params.to - End position of the range
+   * @param params.text - The text content
+   * @returns Range object with from and to positions, or null if not a Chinese text
+   */
   getSegRangeFromCursor(
     cursor: number,
     { from, to, text }: { from: number; to: number; text: string },
@@ -207,6 +223,14 @@ export default class CMChsPatch extends Plugin {
     }
   }
 
+  /**
+   * Get the destination position for a segment-based movement
+   * Used by Vim mode for Chinese word navigation
+   * @param startPos - The starting position
+   * @param nextPos - The target position (determines direction)
+   * @param sliceDoc - Function to slice document text between two positions
+   * @returns The destination position, or null if movement is not possible
+   */
   getSegDestFromGroup(
     startPos: number,
     nextPos: number,
@@ -249,6 +273,13 @@ export default class CMChsPatch extends Plugin {
     }
   }
 
+  /**
+   * Limit the number of Chinese characters in the input string
+   * This prevents processing very long text which could impact performance
+   * @param input - The input string to limit
+   * @param forward - If true, limit from start; if false, limit from end
+   * @returns Limited string with at most chsRangeLimit Chinese characters
+   */
   private limitChsChars(input: string, forward: boolean): string {
     // Safety check for empty or invalid input
     if (!input || input.length === 0) {

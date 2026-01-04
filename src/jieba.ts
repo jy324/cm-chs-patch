@@ -11,6 +11,12 @@ const vaildateTag = (tag: string): keyof typeof vaildTags | undefined =>
 
 let initialized = false;
 
+/**
+ * Initialize Jieba segmenter with WASM binary and optional custom dictionary
+ * @param wasm - ArrayBuffer or Promise of ArrayBuffer containing Jieba WASM binary
+ * @param dict - Optional custom dictionary string, with one word per line
+ * @returns Promise that resolves when initialization is complete
+ */
 export const initJieba = async (
   wasm: Promise<ArrayBuffer> | ArrayBuffer,
   dict?: string,
@@ -42,6 +48,13 @@ export const initJieba = async (
   initialized = true;
 };
 
+/**
+ * Cut text into segments using Jieba
+ * @param text - The text to segment
+ * @param hmm - If true, uses HMM model for unknown word recognition
+ * @returns Array of text segments
+ * @throws Error if Jieba is not initialized
+ */
 export const cut = (text: string, hmm = false) => {
   if (!initialized) throw new Error("jieba not loaded");
   
@@ -58,6 +71,15 @@ export const cut = (text: string, hmm = false) => {
     return text.split('');
   }
 };
+
+/**
+ * Cut text into segments optimized for search
+ * Generates more fine-grained segments for better search matching
+ * @param text - The text to segment
+ * @param hmm - If true, uses HMM model for unknown word recognition
+ * @returns Array of text segments
+ * @throws Error if Jieba is not initialized
+ */
 export const cutForSearch = (text: string, hmm = false) => {
   if (!initialized) throw new Error("jieba not loaded");
   

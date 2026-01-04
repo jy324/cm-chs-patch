@@ -7,9 +7,6 @@ import { cut, cutForSearch, initJieba } from "./jieba";
 import { ChsPatchSettingTab, DEFAULT_SETTINGS } from "./settings";
 import { chsPatternGlobal, isChs } from "./utils.js";
 
-const CHS_RANGE_LIMIT = 10;
-const MAX_ITERATIONS = 1000; // Maximum iterations to prevent infinite loops
-
 // Special repeat characters that may cause issues
 const SPECIAL_REPEAT_CHARS = /[々〻ゝゞヽヾ]/;
 
@@ -157,21 +154,23 @@ export default class CMChsPatch extends Plugin {
       return null;
     }
     
+    const chsRangeLimit = this.settings.chsRangeLimit;
+    
     if (!isChs(text)) {
       // 匹配中文字符
       return null;
     } else {
       // trim long text
-      if (cursor - from > CHS_RANGE_LIMIT) {
-        const newFrom = cursor - CHS_RANGE_LIMIT;
+      if (cursor - from > chsRangeLimit) {
+        const newFrom = cursor - chsRangeLimit;
         if (isChs(text.slice(newFrom, cursor))) {
           // 英文单词超过 RANGE_LIMIT 被截断，不执行截断优化策略
           text = text.slice(newFrom - from);
           from = newFrom;
         }
       }
-      if (to - cursor > CHS_RANGE_LIMIT) {
-        const newTo = cursor + CHS_RANGE_LIMIT;
+      if (to - cursor > chsRangeLimit) {
+        const newTo = cursor + chsRangeLimit;
         if (isChs(text.slice(cursor, newTo))) {
           // 英文单词超过 RANGE_LIMIT 被截断，不执行截断优化策略
           text = text.slice(0, newTo - to);
@@ -215,7 +214,7 @@ export default class CMChsPatch extends Plugin {
   ): number | null {
     try {
       const forward = startPos < nextPos;
-      const text = limitChsChars(
+      const text = this.limitChsChars(
         forward ? sliceDoc(startPos, nextPos) : sliceDoc(nextPos, startPos),
         forward,
       );
@@ -232,9 +231,10 @@ export default class CMChsPatch extends Plugin {
       let length = 0;
       let seg: string;
       let iterations = 0;
+      const maxIterations = this.settings.maxIterations;
       do {
         // Iteration protection to prevent infinite loops
-        if (iterations++ >= MAX_ITERATIONS || segResult.length === 0) {
+        if (iterations++ >= maxIterations || segResult.length === 0) {
           console.warn('Maximum iterations reached in getSegDestFromGroup');
           return null;
         }
@@ -248,40 +248,42 @@ export default class CMChsPatch extends Plugin {
       return null;
     }
   }
-}
 
-function limitChsChars(input: string, forward: boolean) {
-  // Safety check for empty or invalid input
-  if (!input || input.length === 0) {
-    return "";
-  }
-  
-  // Safety check for special repeat characters
-  if (SPECIAL_REPEAT_CHARS.test(input)) {
-    // Limit to a single character to avoid issues
-    return forward ? input.charAt(0) : input.charAt(input.length - 1);
-  }
-  
-  if (!forward) {
-    input = [...input].reverse().join("");
-  }
-  let endingIndex = input.length - 1;
-  let chsCount = 0;
-  let iterations = 0;
-  
-  for (const { index } of input.matchAll(chsPatternGlobal)) {
-    // Iteration protection
-    if (iterations++ >= MAX_ITERATIONS) {
-      console.warn('Maximum iterations reached in limitChsChars');
-      break;
+  private limitChsChars(input: string, forward: boolean): string {
+    // Safety check for empty or invalid input
+    if (!input || input.length === 0) {
+      return "";
     }
-    chsCount++;
-    endingIndex = index;
-    if (chsCount > CHS_RANGE_LIMIT) break;
+    
+    // Safety check for special repeat characters
+    if (SPECIAL_REPEAT_CHARS.test(input)) {
+      // Limit to a single character to avoid issues
+      return forward ? input.charAt(0) : input.charAt(input.length - 1);
+    }
+    
+    if (!forward) {
+      input = [...input].reverse().join("");
+    }
+    let endingIndex = input.length - 1;
+    let chsCount = 0;
+    let iterations = 0;
+    const maxIterations = this.settings.maxIterations;
+    const chsRangeLimit = this.settings.chsRangeLimit;
+    
+    for (const { index } of input.matchAll(chsPatternGlobal)) {
+      // Iteration protection
+      if (iterations++ >= maxIterations) {
+        console.warn('Maximum iterations reached in limitChsChars');
+        break;
+      }
+      chsCount++;
+      endingIndex = index;
+      if (chsCount > chsRangeLimit) break;
+    }
+    const output = input.slice(0, endingIndex + 1);
+    if (!forward) {
+      return [...output].reverse().join("");
+    }
+    return output;
   }
-  const output = input.slice(0, endingIndex + 1);
-  if (!forward) {
-    return [...output].reverse().join("");
-  }
-  return output;
 }

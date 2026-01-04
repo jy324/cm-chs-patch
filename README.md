@@ -11,6 +11,33 @@ Special Thanks to [@fengkx](https://github.com/fengkx) for [jieba-wasm module](h
 
 手动安装结巴分词组件：在设置中启用结巴分词后，从[CDN](https://unpkg.com/jieba-wasm@0.0.2/pkg/web/jieba_rs_wasm_bg.wasm)下载得到 `jieba_rs_wasm_bg.wasm` 文件，将 wasm 文件放在 Obsidian 库的 `.obsidian` 或者其它指定的配置文件夹下后重启 Obsidian
 
+## Features 特性
+
+### Chinese Character Detection 中文字符检测
+- Extended support for CJK Unified Ideographs and Extensions (A-F)
+- Improved detection to avoid affecting other languages (French, Spanish, etc.)
+- Latin characters with accents (e.g., "était") are now correctly handled
+
+### Special Character Handling 特殊字符处理
+- Built-in protection against infinite loops with special repeat characters (々、〻、ゝ、ゞ、ヽ、ヾ)
+- Configurable iteration limits to prevent freezing
+- Safe fallback behavior when encountering problematic characters
+
+### Vim Mode Enhancements Vim 模式增强
+- Chinese punctuation mapping for f/t motions (e.g., typing "." jumps to "。")
+- Improved word navigation (w/e/b/ge) with Chinese segmentation
+- Enhanced stability and error handling
+
+### Advanced Settings 高级设置
+- **Chinese Range Limit** (中文范围限制): Control the number of Chinese characters scanned during segmentation (default: 10)
+- **Maximum Iterations** (最大迭代次数): Safety limit to prevent infinite loops (default: 1000)
+
+## Known Limitations 已知限制
+
+1. **Special Repeat Characters**: Characters like "々" (Japanese repeat character) are handled specially to prevent freezing, but may not move by exact word boundaries
+2. **Performance**: Very long texts with many Chinese characters may experience slight delays; adjust the "Chinese Range Limit" setting if needed
+3. **Mixed Language Text**: The plugin focuses on Chinese text and may not provide optimal segmentation for heavily mixed Chinese-English content
+
 ## Demo
 
 | Obsidian's Default Word Splitting<br>默认分词 | Patched<br>安装插件后 |

@@ -11,7 +11,9 @@ Releases are now automated through GitHub Actions using the release-it tool. To 
 1. Go to the Actions tab in GitHub
 2. Select the "Release" workflow
 3. Click "Run workflow"
-4. Enter the version to release (e.g., "1.12.0" to release the current version, or leave empty/use "patch" for auto-increment)
+4. Enter the version increment or specific version:
+   - Use "patch", "minor", or "major" for automatic version bumping
+   - Or enter a specific version like "1.12.0"
 5. The workflow will:
    - Build the project
    - Create release artifacts

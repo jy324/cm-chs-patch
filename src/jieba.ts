@@ -44,11 +44,35 @@ export const initJieba = async (
 
 export const cut = (text: string, hmm = false) => {
   if (!initialized) throw new Error("jieba not loaded");
-  return jiebaCut(text, hmm);
+  
+  // Input validation
+  if (!text || text.length === 0) {
+    return [];
+  }
+  
+  try {
+    return jiebaCut(text, hmm);
+  } catch (error) {
+    console.error('Error in jieba cut:', error);
+    // Return fallback: split by characters
+    return text.split('');
+  }
 };
 export const cutForSearch = (text: string, hmm = false) => {
   if (!initialized) throw new Error("jieba not loaded");
-  return jiebaCutForSearch(text, hmm);
+  
+  // Input validation
+  if (!text || text.length === 0) {
+    return [];
+  }
+  
+  try {
+    return jiebaCutForSearch(text, hmm);
+  } catch (error) {
+    console.error('Error in jieba cutForSearch:', error);
+    // Return fallback: split by characters
+    return text.split('');
+  }
 };
 
 const vaildTags = {

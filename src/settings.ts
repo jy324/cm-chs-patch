@@ -107,7 +107,7 @@ export class ChsPatchSettingTab extends PluginSettingTab {
           .setPlaceholder("10")
           .setValue(String(this.plugin.settings.chsRangeLimit))
           .onChange(async (value) => {
-            const numValue = parseInt(value);
+            const numValue = parseInt(value, 10);
             if (!isNaN(numValue) && numValue > 0) {
               this.plugin.settings.chsRangeLimit = numValue;
               await this.plugin.saveSettings();
@@ -123,7 +123,7 @@ export class ChsPatchSettingTab extends PluginSettingTab {
           .setPlaceholder("1000")
           .setValue(String(this.plugin.settings.maxIterations))
           .onChange(async (value) => {
-            const numValue = parseInt(value);
+            const numValue = parseInt(value, 10);
             if (!isNaN(numValue) && numValue > 0) {
               this.plugin.settings.maxIterations = numValue;
               await this.plugin.saveSettings();

@@ -246,24 +246,36 @@ export default class CMChsPatch extends Plugin {
       // Safety check: prevent processing if text contains special repeat characters
       if (SPECIAL_REPEAT_CHARS.test(text)) {
         // For special characters, return a safe single-character movement
-        return forward ? startPos + 1 : startPos - 1;
+        // Validate bounds to ensure position is valid
+        const newPos = forward ? startPos + 1 : startPos - 1;
+        // Return null if new position would be invalid (let default handler take over)
+        if (forward ? newPos > nextPos : newPos < nextPos) {
+          return null;
+        }
+        return newPos;
       }
       
       const segResult = this.cut(text);
       if (segResult.length === 0) return null;
 
       let length = 0;
-      let seg: string;
+      let seg: string | undefined;
       let iterations = 0;
       const maxIterations = this.settings.maxIterations;
       do {
-        // Iteration protection to prevent infinite loops
-        if (iterations++ >= maxIterations || segResult.length === 0) {
+        // Check if we've exceeded max iterations
+        if (iterations++ >= maxIterations) {
           console.warn('Maximum iterations reached in getSegDestFromGroup');
           return null;
         }
-        seg = forward ? segResult.shift()! : segResult.pop()!;
-        length += seg.length;
+        // Check if array is empty before shifting/popping
+        if (segResult.length === 0) {
+          break;
+        }
+        seg = forward ? segResult.shift() : segResult.pop();
+        if (seg) {
+          length += seg.length;
+        }
       } while (seg && /\s+/.test(seg));
 
       return forward ? startPos + length : startPos - length;

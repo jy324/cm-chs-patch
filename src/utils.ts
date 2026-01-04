@@ -1,9 +1,18 @@
 // Extended Chinese character range including:
 // - CJK Unified Ideographs: \u4e00-\u9fff
+const CJK_UNIFIED = /[\u4e00-\u9fff]/;
 // - CJK Extension A: \u3400-\u4dbf
+const CJK_EXT_A = /[\u3400-\u4dbf]/;
 // - CJK Compatibility Ideographs: \uF900-\uFAFF
-// - CJK Extension B-F: \u{20000}-\u{2A6DF}, \u{2A700}-\u{2B73F}, \u{2B740}-\u{2B81F}, \u{2B820}-\u{2CEAF}
-const chsPattern = /[\u4e00-\u9fff\u3400-\u4dbf\uF900-\uFAFF]|[\u{20000}-\u{2A6DF}\u{2A700}-\u{2B73F}\u{2B740}-\u{2B81F}\u{2B820}-\u{2CEAF}]/u;
+const CJK_COMPAT = /[\uF900-\uFAFF]/;
+// - CJK Extension B-F: \u{20000}-\u{2CEAF}
+const CJK_EXT_BF = /[\u{20000}-\u{2A6DF}\u{2A700}-\u{2B73F}\u{2B740}-\u{2B81F}\u{2B820}-\u{2CEAF}]/u;
+
+// Combined pattern for all Chinese characters
+const chsPattern = new RegExp(
+  `${CJK_UNIFIED.source}|${CJK_EXT_A.source}|${CJK_COMPAT.source}|${CJK_EXT_BF.source}`,
+  "u"
+);
 export const chsPatternGlobal = new RegExp(chsPattern, "gu");
 
 // Pattern for non-Chinese Latin characters (including French, Spanish, etc.)

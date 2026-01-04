@@ -31,5 +31,5 @@ GITHUB_TOKEN=<your_token> pnpm release
 
 - `main.js` - Main plugin file
 - `manifest.json` - Plugin manifest
-- `styles.css` - Plugin styles (included if the plugin has custom styles)
+- `styles.css` - Plugin styles (only included if the file exists; automatically skipped if not present)
 - `zotlit.zip` - Complete plugin package containing all files above

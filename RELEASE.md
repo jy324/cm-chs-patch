@@ -12,8 +12,9 @@ Releases are now automated through GitHub Actions using the release-it tool. To 
 2. Select the "Release" workflow
 3. Click "Run workflow"
 4. Enter the version increment or specific version:
-   - Use "patch", "minor", or "major" for automatic version bumping
-   - Or enter a specific version like "1.12.0"
+   - Use "patch", "minor", or "major" for automatic version bumping from current version
+   - Or enter a specific version number like "1.12.0" to release that exact version
+   - Note: release-it accepts both increment types and specific semver versions
 5. The workflow will:
    - Build the project
    - Create release artifacts
@@ -30,5 +31,5 @@ GITHUB_TOKEN=<your_token> pnpm release
 
 - `main.js` - Main plugin file
 - `manifest.json` - Plugin manifest
-- `styles.css` - Plugin styles (if present)
-- `zotlit.zip` - Complete plugin package
+- `styles.css` - Plugin styles (included if the plugin has custom styles)
+- `zotlit.zip` - Complete plugin package containing all files above

@@ -3,6 +3,12 @@
 
 import { isChs } from "./utils.js";
 
+// Maximum iterations to prevent infinite loops
+const MAX_ITERATIONS = 1000;
+
+// Special repeat characters that may cause issues
+const SPECIAL_REPEAT_CHARS = /[々〻ゝゞヽヾ]/;
+
 // 中英文标点映射
 const chinese_punctuation_mapping = {
   ".": "。",
@@ -10,19 +16,30 @@ const chinese_punctuation_mapping = {
   ":": "：",
   ";": "；",
   '?': "？",
+  '!': "！",
   "\\": "、",
-  '"': "“",
+  "\"": "“",
+  "'": "'",
   '<': "《",
   '>': "》",
   "[": "「",
   "]": "」",
+  "{": "『",
+  "}": "』",
   "(": "（",
   ")": "）",
+  "-": "—",
+  "~": "～",
+  "_": "——",
 };
 
 /**
- *
- * @param {{CodeMirror: typeof import("codemirror"); vim: any; cut(text: string): any[]}} ctx
+ * Utility functions for Vim mode with Chinese character support
+ * @param {Object} ctx - Context object
+ * @param {typeof import("codemirror")} ctx.CodeMirror - CodeMirror class
+ * @param {any} ctx.vim - Vim mode object
+ * @param {function(string): string[]} ctx.cut - Function to segment Chinese text
+ * @returns {Object} Utility functions for Vim mode
  */
 export function utils({ vim, CodeMirror, cut }) {
   const vimGlobalState = vim.getVimGlobalState_();
@@ -154,6 +171,7 @@ export function utils({ vim, CodeMirror, cut }) {
     var line = cm.getLine(lineNum);
     var dir = forward ? 1 : -1;
     var charTests = bigWord ? bigWordCharTest : wordCharTest;
+    var outerIterations = 0;
 
     if (emptyLineIsWord && line == "") {
       lineNum += dir;
@@ -165,6 +183,12 @@ export function utils({ vim, CodeMirror, cut }) {
     }
 
     while (true) {
+      // Outer loop protection
+      if (outerIterations++ >= MAX_ITERATIONS) {
+        console.warn('Maximum outer iterations reached in findWord');
+        return null;
+      }
+      
       if (emptyLineIsWord && line == "") {
         return { from: 0, to: 0, line: lineNum };
       }
@@ -172,19 +196,33 @@ export function utils({ vim, CodeMirror, cut }) {
       var wordStart = stop,
         wordEnd = stop;
       // Find bounds of next word.
+      var innerIterations = 0;
       while (pos != stop) {
+        // Inner loop protection
+        if (innerIterations++ >= MAX_ITERATIONS) {
+          console.warn('Maximum inner iterations reached in findWord');
+          return null;
+        }
+        
         var foundWord = false;
         // #region mod
         const from = Math.max(pos - 6, 0),
           to = Math.min(pos + 6, line.length);
         const text = line.slice(from, to);
-        if (isChs(text)) {
+        // Safety check for special repeat characters
+        if (isChs(text) && !SPECIAL_REPEAT_CHARS.test(text)) {
           for (let i = 0; i < charTests.length && !foundWord; ++i) {
             if (!charTests[i](line.charAt(pos))) continue;
             wordStart = pos;
             const segments = cut(line);
             let segment;
+            var segmentIterations = 0;
             while (pos != stop) {
+              // Segment loop protection
+              if (segmentIterations++ >= MAX_ITERATIONS) {
+                console.warn('Maximum segment iterations reached in findWord');
+                break;
+              }
               // 获取当前光标下的分词，跳过分隔字符
               segment = segmentAt(segments, pos);
               if (!charTests[i](segment.text)) continue;
@@ -227,7 +265,13 @@ export function utils({ vim, CodeMirror, cut }) {
           if (charTests[i](line.charAt(pos))) {
             wordStart = pos;
             // Advance to end of word.
+            var advanceIterations = 0;
             while (pos != stop && charTests[i](line.charAt(pos))) {
+              // Advance loop protection
+              if (advanceIterations++ >= MAX_ITERATIONS) {
+                console.warn('Maximum advance iterations reached in findWord');
+                break;
+              }
               pos += dir;
             }
             wordEnd = pos;
@@ -264,7 +308,16 @@ export function utils({ vim, CodeMirror, cut }) {
 
   // #endregion
 
-  /** custom function */
+  /**
+   * Find index of character considering Chinese punctuation mappings
+   * Allows typing English punctuation to jump to corresponding Chinese punctuation
+   * @param {string} character - The character to search for
+   * @param {number} start - Starting position in the line
+   * @param {string} line - The line text
+   * @param {boolean} forward - Search direction
+   * @param {number} idx - Index found for the original character
+   * @returns {number} The best index considering both English and Chinese punctuation
+   */
   function idxbyChsPunctuation(character, start, line, forward, idx) {
     if (
       character.length == 1 &&
@@ -283,6 +336,13 @@ export function utils({ vim, CodeMirror, cut }) {
     }
     return idx;
   }
+  
+  /**
+   * Get the segment at a given position in the line
+   * @param {string[]} segments - Array of text segments
+   * @param {number} pos - Position in the line
+   * @returns {Object} Segment information with index, text, begin, and end positions
+   */
   function segmentAt(segments, pos) {
     let chunkBegin = 0,
       chunkEnd = 0;

@@ -10,6 +10,8 @@ export interface ChsPatchSetting {
   dict: string;
   moveByChineseWords: boolean;
   moveTillChinesePunctuation: boolean;
+  chsRangeLimit: number;
+  maxIterations: number;
 }
 
 export const DEFAULT_SETTINGS: ChsPatchSetting = {
@@ -18,6 +20,8 @@ export const DEFAULT_SETTINGS: ChsPatchSetting = {
   dict: "",
   moveByChineseWords: true,
   moveTillChinesePunctuation: true,
+  chsRangeLimit: 10,
+  maxIterations: 1000,
 };
 
 type SettingKeyWithType<T> = {
@@ -90,6 +94,42 @@ export class ChsPatchSettingTab extends PluginSettingTab {
           "Motion f/t<character> 支持输入英文标点跳转到中文标点 in Vim Normal Mode, 重启Obsidian生效",
         );
     }
+    
+    new Setting(containerEl)
+      .setName("高级设置")
+      .setHeading();
+    
+    new Setting(containerEl)
+      .setName("中文范围限制")
+      .setDesc("限制分词时扫描的中文字符数量，默认为 10。增加此值可以提高长文本的分词准确度，但可能影响性能。")
+      .addText((text) => 
+        text
+          .setPlaceholder("10")
+          .setValue(String(this.plugin.settings.chsRangeLimit))
+          .onChange(async (value) => {
+            const numValue = parseInt(value, 10);
+            if (!isNaN(numValue) && numValue > 0) {
+              this.plugin.settings.chsRangeLimit = numValue;
+              await this.plugin.saveSettings();
+            }
+          })
+      );
+    
+    new Setting(containerEl)
+      .setName("最大迭代次数")
+      .setDesc("防止无限循环的安全限制，默认为 1000。如果遇到特殊字符导致卡死的问题，保持此默认值即可。")
+      .addText((text) => 
+        text
+          .setPlaceholder("1000")
+          .setValue(String(this.plugin.settings.maxIterations))
+          .onChange(async (value) => {
+            const numValue = parseInt(value, 10);
+            if (!isNaN(numValue) && numValue > 0) {
+              this.plugin.settings.maxIterations = numValue;
+              await this.plugin.saveSettings();
+            }
+          })
+      );
   }
 
   addToggle(addTo: HTMLElement, key: SettingKeyWithType<boolean>): Setting {

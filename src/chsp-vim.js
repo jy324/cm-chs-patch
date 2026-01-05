@@ -1,5 +1,5 @@
 // @ts-check
-/* eslint-disable */
+ 
 import { Component } from "obsidian";
 import { utils } from "./vim-utils.js";
 

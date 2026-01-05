@@ -1,4 +1,3 @@
-/* eslint-disable prefer-arrow/prefer-arrow-functions */
 import type { EditorView } from "@codemirror/view";
 import { LineView } from "cm6-view-src/src/blockview";
 import type { Rect } from "cm6-view-src/src/dom";

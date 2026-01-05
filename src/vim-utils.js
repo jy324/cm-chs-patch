@@ -1,4 +1,4 @@
-/* eslint-disable no-constant-condition */
+ 
 // source: obsidian v1.1.12
 
 import { isChs } from "./utils.js";

@@ -1,4 +1,3 @@
-/* eslint-disable prefer-arrow/prefer-arrow-functions */
 import { EditorSelection } from "@codemirror/state";
 import type { SelectionRange } from "@codemirror/state";
 import type { MouseSelectionStyle } from "@codemirror/view";
@@ -14,10 +13,10 @@ export const dblClickPatch = (plugin: CMChsPatch) => {
     view: EditorView,
     pos: number,
     bias: -1 | 1,
-    type: number,
+    _type: number,
   ): SelectionRange => {
     const range = groupAt(view.state, pos, bias);
-    return cm6GetChsSeg(plugin, pos, range, view.state) ?? range;
+    return cm6GetChsSeg(plugin, pos, range, view.state) ?? EditorSelection.range(range.from, range.to);
   };
   const dblClickPatch = EditorView.mouseSelectionStyle.of((view, event) => {
     // Only handle double clicks

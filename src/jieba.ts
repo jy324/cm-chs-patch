@@ -2,7 +2,10 @@ import init, {
   add_word,
   cut as jiebaCut,
   cut_for_search as jiebaCutForSearch,
-} from "jieba-wasm/pkg/web/jieba_rs_wasm";
+  with_dict,
+} from "jieba-wasm/web";
+
+import wasm_data from "./jieba_rs_wasm_bg.wasm";
 
 const vaildateFreq = (freq: string): number | undefined =>
   freq && Number.isInteger(+freq) ? +freq : undefined;
@@ -12,37 +15,42 @@ const vaildateTag = (tag: string): keyof typeof vaildTags | undefined =>
 let initialized = false;
 
 /**
- * Initialize Jieba segmenter with WASM binary and optional custom dictionary
- * @param wasm - ArrayBuffer or Promise of ArrayBuffer containing Jieba WASM binary
+ * Initialize Jieba segmenter with optional custom dictionary
  * @param dict - Optional custom dictionary string, with one word per line
  * @returns Promise that resolves when initialization is complete
  */
 export const initJieba = async (
-  wasm: Promise<ArrayBuffer> | ArrayBuffer,
   dict?: string,
 ) => {
   if (initialized) return;
   const invaildLines = [] as string[];
-  await init(wasm);
-  if (dict)
-    for (const line of dict.split(/\r?\n/)) {
-      // eg: 集团公司 1297 n
-      const [word, freqOrTag, tag] = line.trim().split(/\s+/);
-      let f: number | undefined, t: keyof typeof vaildTags | undefined;
-      if (!word) {
-        invaildLines.push(line);
-        continue;
-      }
-      if (!freqOrTag && !tag) {
-        add_word(word);
-      } else if ((t = vaildateTag(freqOrTag))) {
-        add_word(word, undefined, t);
-      } else {
-        t = vaildateTag(tag);
-        f = vaildateFreq(freqOrTag);
-        add_word(word, f, t);
+  await init(wasm_data);
+  if (dict) {
+    // Try to use with_dict for bulk loading first
+    try {
+      with_dict(dict);
+    } catch {
+      // Fallback to individual add_word calls
+      for (const line of dict.split(/\r?\n/)) {
+        // eg: 集团公司 1297 n
+        const [word, freqOrTag, tag] = line.trim().split(/\s+/);
+        let f: number | undefined, t: keyof typeof vaildTags | undefined;
+        if (!word) {
+          invaildLines.push(line);
+          continue;
+        }
+        if (!freqOrTag && !tag) {
+          add_word(word);
+        } else if ((t = vaildateTag(freqOrTag))) {
+          add_word(word, undefined, t);
+        } else {
+          t = vaildateTag(tag);
+          f = vaildateFreq(freqOrTag);
+          add_word(word, f, t);
+        }
       }
     }
+  }
   // initialize jieba.wasm
   jiebaCut("", true);
   initialized = true;
@@ -57,12 +65,12 @@ export const initJieba = async (
  */
 export const cut = (text: string, hmm = false) => {
   if (!initialized) throw new Error("jieba not loaded");
-  
+
   // Input validation
   if (!text || text.length === 0) {
     return [];
   }
-  
+
   try {
     return jiebaCut(text, hmm);
   } catch (error) {
@@ -82,12 +90,12 @@ export const cut = (text: string, hmm = false) => {
  */
 export const cutForSearch = (text: string, hmm = false) => {
   if (!initialized) throw new Error("jieba not loaded");
-  
+
   // Input validation
   if (!text || text.length === 0) {
     return [];
   }
-  
+
   try {
     return jiebaCutForSearch(text, hmm);
   } catch (error) {

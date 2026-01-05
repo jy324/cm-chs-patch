@@ -1,16 +1,20 @@
 {
-  "extends": "@aidenlx/eslint-config",
   "compilerOptions": {
-    "lib": ["esnext", "dom", "ES2022.Intl"],
-    "moduleResolution": "Node",
-    "module": "CommonJS",
+    "lib": [
+      "esnext",
+      "dom",
+      "ES2022.Intl"
+    ],
+    "moduleResolution": "bundler",
+    "module": "ESNext",
     "target": "ES2020",
     "esModuleInterop": true,
-    "incremental": false
+    "incremental": false,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*.ts",
-    "node_modules/cm6-view-src/src/*.ts",
+    "src/**/*.d.ts",
     "src/chsp-vim.js"
   ]
 }

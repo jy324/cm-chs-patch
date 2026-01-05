@@ -1,8 +1,7 @@
-import { Platform, Plugin } from "obsidian";
+import { Plugin } from "obsidian";
 
 import { VimPatcher } from "./chsp-vim.js";
 import setupCM6 from "./cm6";
-import GoToDownloadModal from "./install-guide";
 import { cut, cutForSearch, initJieba } from "./jieba";
 import { ChsPatchSettingTab, DEFAULT_SETTINGS } from "./settings";
 import { chsPatternGlobal, isChs } from "./utils.js";
@@ -10,74 +9,7 @@ import { chsPatternGlobal, isChs } from "./utils.js";
 // Special repeat characters that may cause issues
 const SPECIAL_REPEAT_CHARS = /[々〻ゝゞヽヾ]/;
 
-const userDataDir = Platform.isDesktopApp
-  ? // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require("@electron/remote").app.getPath("userData")
-  : null;
-
 export default class CMChsPatch extends Plugin {
-  libName = "jieba_rs_wasm_bg.wasm";
-  async loadLib(): Promise<ArrayBuffer | null> {
-    if (userDataDir) {
-      const { readFile } =
-        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/consistent-type-imports
-        require("fs/promises") as typeof import("fs/promises");
-      // read file to arraybuffer in nodejs
-      try {
-        const buf = await readFile(this.libPath);
-        return buf;
-      } catch (e) {
-        if ((e as NodeJS.ErrnoException).code === "ENOENT") {
-          return null;
-        }
-        throw e;
-      }
-    } else {
-      if (!(await app.vault.adapter.exists(this.libPath, true))) {
-        return null;
-      }
-      const buf = await app.vault.adapter.readBinary(this.libPath);
-      return buf;
-    }
-  }
-  async libExists(): Promise<boolean> {
-    if (userDataDir) {
-      const { access } =
-        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/consistent-type-imports
-        require("fs/promises") as typeof import("fs/promises");
-      try {
-        await access(this.libPath);
-        return true;
-      } catch (e) {
-        if ((e as NodeJS.ErrnoException).code === "ENOENT") {
-          return false;
-        }
-        throw e;
-      }
-    } else {
-      return await app.vault.adapter.exists(this.libPath, true);
-    }
-  }
-  async saveLib(ab: ArrayBuffer): Promise<void> {
-    if (userDataDir) {
-      const { writeFile } =
-        // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/consistent-type-imports
-        require("fs/promises") as typeof import("fs/promises");
-      await writeFile(this.libPath, Buffer.from(ab));
-    } else {
-      await app.vault.adapter.writeBinary(this.libPath, ab);
-    }
-  }
-  get libPath(): string {
-    if (userDataDir) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/consistent-type-imports
-      const { join } = require("path") as typeof import("path");
-      return join(userDataDir, this.libName);
-    } else {
-      return [app.vault.configDir, this.libName].join("/");
-    }
-  }
-
   async onload() {
     this.addSettingTab(new ChsPatchSettingTab(this));
 
@@ -85,7 +17,7 @@ export default class CMChsPatch extends Plugin {
 
     if (await this.loadSegmenter()) {
       setupCM6(this);
-      console.info("editor word splitting patched");
+      console.warn("editor word splitting patched");
     }
     this.addChild(new VimPatcher(this));
   }
@@ -107,18 +39,18 @@ export default class CMChsPatch extends Plugin {
       this.segmenter = new Intl.Segmenter("zh-CN", {
         granularity: "word",
       });
-      console.info("window.Intl.Segmenter loaded");
+      console.warn("window.Intl.Segmenter loaded");
       return true;
     }
 
-    const jiebaBinary = await this.loadLib();
-    if (!jiebaBinary) {
-      new GoToDownloadModal(this).open();
+    try {
+      await initJieba(this.settings.dict);
+      console.warn("Jieba loaded");
+      return true;
+    } catch (error) {
+      console.error("Failed to load Jieba:", error);
       return false;
     }
-    await initJieba(jiebaBinary, this.settings.dict);
-    console.info("Jieba loaded");
-    return true;
   }
 
   /**
@@ -133,7 +65,7 @@ export default class CMChsPatch extends Plugin {
     if (!text || text.length === 0) {
       return [];
     }
-    
+
     try {
       if (!this.settings.useJieba && this.segmenter) {
         return Array.from(this.segmenter.segment(text)).map((seg) => seg.segment);
@@ -169,9 +101,9 @@ export default class CMChsPatch extends Plugin {
     if (cursor < from || cursor > to) {
       return null;
     }
-    
+
     const chsRangeLimit = this.settings.chsRangeLimit;
-    
+
     if (!isChs(text)) {
       // 匹配中文字符
       return null;
@@ -193,7 +125,7 @@ export default class CMChsPatch extends Plugin {
           to = newTo;
         }
       }
-      
+
       try {
         const segResult = this.cut(text);
 
@@ -242,7 +174,7 @@ export default class CMChsPatch extends Plugin {
         forward ? sliceDoc(startPos, nextPos) : sliceDoc(nextPos, startPos),
         forward,
       );
-      
+
       // Safety check: prevent processing if text contains special repeat characters
       if (SPECIAL_REPEAT_CHARS.test(text)) {
         // For special characters, return a safe single-character movement
@@ -254,7 +186,7 @@ export default class CMChsPatch extends Plugin {
         }
         return newPos;
       }
-      
+
       const segResult = this.cut(text);
       if (segResult.length === 0) return null;
 
@@ -297,13 +229,13 @@ export default class CMChsPatch extends Plugin {
     if (!input || input.length === 0) {
       return "";
     }
-    
+
     // Safety check for special repeat characters
     if (SPECIAL_REPEAT_CHARS.test(input)) {
       // Limit to a single character to avoid issues
       return forward ? input.charAt(0) : input.charAt(input.length - 1);
     }
-    
+
     if (!forward) {
       input = [...input].reverse().join("");
     }
@@ -312,7 +244,7 @@ export default class CMChsPatch extends Plugin {
     let iterations = 0;
     const maxIterations = this.settings.maxIterations;
     const chsRangeLimit = this.settings.chsRangeLimit;
-    
+
     for (const { index } of input.matchAll(chsPatternGlobal)) {
       // Iteration protection
       if (iterations++ >= maxIterations) {

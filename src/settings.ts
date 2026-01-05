@@ -1,6 +1,5 @@
 import { debounce, PluginSettingTab, Setting } from "obsidian";
 import type CMChsPatch from "./chsp-main";
-import GoToDownloadModal from "./install-guide";
 
 type TextAreaSize = Partial<Record<"cols" | "rows", number>>;
 
@@ -80,7 +79,7 @@ export class ChsPatchSettingTab extends PluginSettingTab {
 
     if (
       (this.plugin.settings.useJieba || (window.Intl as any)?.Segmenter) &&
-      app.vault.getConfig("vimMode") == true
+      this.app.vault.getConfig("vimMode") == true
     ) {
       this.addToggle(containerEl, "moveByChineseWords")
         .setName("【Vim Mode】使用结巴分词移动光标")
@@ -94,15 +93,15 @@ export class ChsPatchSettingTab extends PluginSettingTab {
           "Motion f/t<character> 支持输入英文标点跳转到中文标点 in Vim Normal Mode, 重启Obsidian生效",
         );
     }
-    
+
     new Setting(containerEl)
       .setName("高级设置")
       .setHeading();
-    
+
     new Setting(containerEl)
       .setName("中文范围限制")
       .setDesc("限制分词时扫描的中文字符数量，默认为 10。增加此值可以提高长文本的分词准确度，但可能影响性能。")
-      .addText((text) => 
+      .addText((text) =>
         text
           .setPlaceholder("10")
           .setValue(String(this.plugin.settings.chsRangeLimit))
@@ -114,11 +113,11 @@ export class ChsPatchSettingTab extends PluginSettingTab {
             }
           })
       );
-    
+
     new Setting(containerEl)
       .setName("最大迭代次数")
       .setDesc("防止无限循环的安全限制，默认为 1000。如果遇到特殊字符导致卡死的问题，保持此默认值即可。")
-      .addText((text) => 
+      .addText((text) =>
         text
           .setPlaceholder("1000")
           .setValue(String(this.plugin.settings.maxIterations))
@@ -138,12 +137,6 @@ export class ChsPatchSettingTab extends PluginSettingTab {
         this.plugin.settings[key] = value;
         this.plugin.saveSettings();
         if (key == "useJieba") {
-          app.vault.adapter
-            .exists(this.plugin.libPath, true)
-            .then((isExisted) => {
-              if (!isExisted && value == true)
-                new GoToDownloadModal(this.plugin).open();
-            });
           this.display();
         }
       });
@@ -161,7 +154,7 @@ export class ChsPatchSettingTab extends PluginSettingTab {
     return new Setting(addTo).addTextArea((text) => {
       const { get, set } = key;
       const getter =
-          typeof get === "function" ? get : () => this.plugin.settings[get],
+        typeof get === "function" ? get : () => this.plugin.settings[get],
         setter =
           typeof set === "function"
             ? set

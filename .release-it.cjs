@@ -32,7 +32,6 @@ module.exports = {
     assets: [
       "build/main.js",
       "build/manifest.json",
-      "build/styles.css",
       "build/zotlit.zip",
     ],
     proxy: process.env.HTTPS_PROXY,
